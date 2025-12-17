@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_984044_integrati.IHubProEnvironmentManager</api_name>
+        <caller_access/>
+        <client_callable>true</client_callable>
+        <description>Manage environments and variables for IntegrationHub Pro</description>
+        <mobile_callable>false</mobile_callable>
+        <name>IHubProEnvironmentManager</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script><![CDATA[import { gs } from '@servicenow/glide';
+
+var IHubProEnvironmentManager = Class.create();
+IHubProEnvironmentManager.prototype = Object.extendsObject(global.AbstractAjaxProcessor, {
+
+    /**
+     * Get the currently active environment for current user
+     * @returns {string} JSON response with environment details
+     */
+    getActiveEnvironment: function() {
+        try {
+            var envGr = new GlideRecord('x_984044_integrati_environment');
+            envGr.addQuery('owner', gs.getUserID());
+            envGr.addQuery('is_active', true);
+            envGr.query();
+
+            if (envGr.next()) {
+                var result = {
+                    success: true,
+                    environment: {
+                        sysId: envGr.getUniqueValue(),
+                        name: envGr.getValue('name'),
+                        description: envGr.getValue('description'),
+                        variables: this._parseJSON(envGr.getValue('variables'))
+                    }
+                };
+                return JSON.stringify(result);
+            }
+
+            return JSON.stringify({
+                success: true,
+                environment: null
+            });
+        } catch (e) {
+            gs.error('IHubProEnvironmentManager.getActiveEnvironment error: ' + e.message);
+            return JSON.stringify({
+                success: false,
+                error: 'Failed to get active environment: ' + e.message
+            });
+        }
+    },
+
+    /**
+     * Set an environment as active (deactivate others)
+     * @returns {string} JSON response
+     */
+    setActiveEnvironment: function() {
+        try {
+            var environmentSysId = this.getParameter('sysparm_environment_sys_id');
+            
+            if (!environmentSysId) {
+                return JSON.stringify({
+                    success: false,
+                    error: 'Environment sys_id is required'
+                });
+            }
+
+            // Check if environment exists and belongs to current user
+            var envGr = new GlideRecord('x_984044_integrati_environment');
+            if (!envGr.get(environmentSysId)) {
+                return JSON.stringify({
+                    success: false,
+                    error: 'Environment not found'
+                });
+            }
+
+            if (envGr.getValue('owner') != gs.getUserID()) {
+                return JSON.stringify({
+                    success: false,
+                    error: 'Access denied: Environment belongs to another user'
+                });
+            }
+
+            // Deactivate all environments for current user
+            var deactivateGr = new GlideRecord('x_984044_integrati_environment');
+            deactivateGr.addQuery('owner', gs.getUserID());
+            deactivateGr.addQuery('is_active', true);
+            deactivateGr.query();
+
+            while (deactivateGr.next()) {
+                deactivateGr.setValue('is_active', false);
+                deactivateGr.update();
+            }
+
+            // Activate the specified environment
+            envGr.setValue('is_active', true);
+            envGr.update();
+
+            return JSON.stringify({
+                success: true,
+                message: 'Environment activated successfully'
+            });
+
+        } catch (e) {
+            gs.error('IHubProEnvironmentManager.setActiveEnvironment error: ' + e.message);
+            return JSON.stringify({
+                success: false,
+                error: 'Failed to set active environment: ' + e.message
+            });
+        }
+    },
+
+    /**
+     * Get variables from environment as JavaScript object
+     * @returns {string} JSON response with variables
+     */
+    getEnvironmentVariables: function() {
+        try {
+            var environmentSysId = this.getParameter('sysparm_environment_sys_id');
+            
+            if (!environmentSysId) {
+                return JSON.stringify({
+                    success: false,
+                    error: 'Environment sys_id is required'
+                });
+            }
+
+            var envGr = new GlideRecord('x_984044_integrati_environment');
+            if (!envGr.get(environmentSysId)) {
+                return JSON.stringify({
+                    success: false,
+                    error: 'Environment not found'
+                });
+            }
+
+            // Check access - user must be owner or environment must be shared
+            if (envGr.getValue('owner') != gs.getUserID() && envGr.getValue('shared') != 'true') {
+                return JSON.stringify({
+                    success: false,
+                    error: 'Access denied'
+                });
+            }
+
+            var variables = this._parseJSON(envGr.getValue('variables'));
+
+            return JSON.stringify({
+                success: true,
+                variables: variables
+            });
+
+        } catch (e) {
+            gs.error('IHubProEnvironmentManager.getEnvironmentVariables error: ' + e.message);
+            return JSON.stringify({
+                success: false,
+                error: 'Failed to get environment variables: ' + e.message
+            });
+        }
+    },
+
+    /**
+     * Get all environments for current user
+     * @returns {string} JSON response with environments list
+     */
+    getAllEnvironments: function() {
+        try {
+            var environments = [];
+            var envGr = new GlideRecord('x_984044_integrati_environment');
+            
+            // Get user's own environments and shared environments
+            var condition = envGr.addQuery('owner', gs.getUserID());
+            condition.addOrCondition('shared', true);
+            envGr.addActiveQuery();
+            envGr.orderBy('name');
+            envGr.query();
+
+            while (envGr.next()) {
+                environments.push({
+                    sysId: envGr.getUniqueValue(),
+                    name: envGr.getValue('name'),
+                    description: envGr.getValue('description'),
+                    isActive: envGr.getValue('is_active') == 'true',
+                    isOwner: envGr.getValue('owner') == gs.getUserID(),
+                    isShared: envGr.getValue('shared') == 'true',
+                    variableCount: Object.keys(this._parseJSON(envGr.getValue('variables'))).length
+                });
+            }
+
+            return JSON.stringify({
+                success: true,
+                environments: environments
+            });
+
+        } catch (e) {
+            gs.error('IHubProEnvironmentManager.getAllEnvironments error: ' + e.message);
+            return JSON.stringify({
+                success: false,
+                error: 'Failed to get environments: ' + e.message
+            });
+        }
+    },
+
+    /**
+     * Create a new environment
+     * @returns {string} JSON response
+     */
+    createEnvironment: function() {
+        try {
+            var name = this.getParameter('sysparm_name');
+            var description = this.getParameter('sysparm_description');
+            var variables = this.getParameter('sysparm_variables');
+
+            if (!name) {
+                return JSON.stringify({
+                    success: false,
+                    error: 'Environment name is required'
+                });
+            }
+
+            var envGr = new GlideRecord('x_984044_integrati_environment');
+            envGr.initialize();
+            envGr.setValue('name', name);
+            envGr.setValue('description', description || '');
+            envGr.setValue('variables', variables || '{}');
+            envGr.setValue('owner', gs.getUserID());
+            envGr.setValue('shared', false);
+            envGr.setValue('is_active', false);
+
+            var sysId = envGr.insert();
+
+            return JSON.stringify({
+                success: true,
+                environment: {
+                    sysId: sysId,
+                    name: name,
+                    description: description
+                }
+            });
+
+        } catch (e) {
+            gs.error('IHubProEnvironmentManager.createEnvironment error: ' + e.message);
+            return JSON.stringify({
+                success: false,
+                error: 'Failed to create environment: ' + e.message
+            });
+        }
+    },
+
+    /**
+     * Parse JSON string safely
+     * @param {string} jsonString
+     * @returns {Object}
+     */
+    _parseJSON: function(jsonString) {
+        try {
+            return JSON.parse(jsonString || '{}');
+        } catch (e) {
+            return {};
+        }
+    },
+
+    type: 'IHubProEnvironmentManager'
+});]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-12-17 06:44:03</sys_created_on>
+        <sys_id>9ea9a0bdb44349949b37a2fbaf72c4ff</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>IHubProEnvironmentManager</sys_name>
+        <sys_package display_value="Integrationh" source="x_984044_integrati">794508f6c331321013e7b8ddd4013165</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="Integrationh">794508f6c331321013e7b8ddd4013165</sys_scope>
+        <sys_update_name>sys_script_include_9ea9a0bdb44349949b37a2fbaf72c4ff</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-12-17 06:44:03</sys_updated_on>
+    </sys_script_include>
+</record_update>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_module">
+    <sys_module action="INSERT_OR_UPDATE">
+        <content><![CDATA[{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "version": 1,
+  "serialNumber": "urn:uuid:d3af6374-207d-4577-a581-a46f5d90a9ab",
+  "metadata": {
+    "timestamp": "2025-12-17T06:43:51.661Z",
+    "tools": {
+      "components": [
+        {
+          "type": "library",
+          "name": "sdk-build-plugins",
+          "group": "@servicenow",
+          "version": "4.1.1",
+          "author": "ServiceNow"
+        }
+      ]
+    },
+    "component": {
+      "type": "application",
+      "name": "x-984044-integrationh",
+      "version": "1.0.0",
+      "bom-ref": "pkg:servicenow/x-984044-integrationh@1.0.0?sys_scope_id=794508f6c331321013e7b8ddd4013165",
+      "description": "[BUILD AGENT GENERATED]:  A Postman-like API testing tool inside ServiceNow for testing outbound REST API integrations to external systems",
+      "licenses": [
+        {
+          "license": {
+            "name": "UNLICENSED"
+          }
+        }
+      ],
+      "purl": "pkg:servicenow/x-984044-integrationh@1.0.0?sys_scope_id=794508f6c331321013e7b8ddd4013165"
+    }
+  },
+  "components": [],
+  "dependencies": [
+    {
+      "ref": "pkg:servicenow/x-984044-integrationh@1.0.0?sys_scope_id=794508f6c331321013e7b8ddd4013165"
+    }
+  ]
+}]]></content>
+        <external_source>false</external_source>
+        <path>x_984044_integrati/x-984044-integrationh/1.0.0/bom.json</path>
+        <sys_class_name>sys_module</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-12-17 06:44:02</sys_created_on>
+        <sys_id>3692513037c147b1963263aa70330e4e</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>x_984044_integrati/x-984044-integrationh/1.0.0/bom.json</sys_name>
+        <sys_package display_value="Integrationh" source="x_984044_integrati">794508f6c331321013e7b8ddd4013165</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="Integrationh">794508f6c331321013e7b8ddd4013165</sys_scope>
+        <sys_update_name>sys_module_3692513037c147b1963263aa70330e4e</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-12-17 06:44:02</sys_updated_on>
+    </sys_module>
+</record_update>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?><database>
+    <element db_object_id="0c6b4436c371321013e7b8ddd40131d9" label="Environment" max_length="40" name="x_984044_integrati_environment" type="collection">
+        <element attributes="edge_encryption_enabled=true" display="true" label="Name" mandatory="true" max_length="100" name="name" type="string"/>
+        <element label="Active" max_length="40" name="is_active" type="boolean"/>
+        <element attributes="encode_utf8=false" default="javascript:gs.getUserID()" label="Owner" mandatory="true" max_length="32" name="owner" reference="sys_user" type="reference"/>
+        <element attributes="edge_encryption_enabled=true" label="Description" max_length="500" name="description" type="string"/>
+        <element label="Shared" max_length="40" name="shared" type="boolean"/>
+        <element attributes="edge_encryption_enabled=true" label="Created On" max_length="40" name="created_on" read_only="true" type="glide_date_time"/>
+        <element attributes="edge_encryption_enabled=true" default="{}" label="Variables (JSON)" max_length="8000" name="variables" type="string"/>
+        <index name="index">
+            <element name="owner"/>
+        </index>
+    </element>
+</database>

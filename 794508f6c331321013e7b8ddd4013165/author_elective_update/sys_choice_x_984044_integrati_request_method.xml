@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update>
+    <sys_choice action="INSERT_OR_UPDATE" field="method" table="x_984044_integrati_request" version="3">
+        <sys_choice_set action="INSERT_OR_UPDATE">
+            <element>method</element>
+            <name>x_984044_integrati_request</name>
+            <sys_class_name>sys_choice_set</sys_class_name>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2025-12-17 06:43:59</sys_created_on>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_name>method</sys_name>
+            <sys_package display_value="Integrationh" source="x_984044_integrati">794508f6c331321013e7b8ddd4013165</sys_package>
+            <sys_policy/>
+            <sys_scope display_value="Integrationh">794508f6c331321013e7b8ddd4013165</sys_scope>
+            <sys_update_name>sys_choice_x_984044_integrati_request_method</sys_update_name>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2025-12-17 06:43:59</sys_updated_on>
+        </sys_choice_set>
+        <sys_choice action="INSERT_OR_UPDATE">
+            <dependent_value/>
+            <element>method</element>
+            <hint/>
+            <inactive>false</inactive>
+            <label>GET</label>
+            <language>en</language>
+            <name>x_984044_integrati_request</name>
+            <sequence>0</sequence>
+            <synonyms/>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2025-12-17 06:43:59</sys_created_on>
+            <sys_domain>global</sys_domain>
+            <sys_domain_path>/</sys_domain_path>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2025-12-17 06:43:59</sys_updated_on>
+            <value>GET</value>
+        </sys_choice>
+        <sys_choice action="INSERT_OR_UPDATE">
+            <dependent_value/>
+            <element>method</element>
+            <hint/>
+            <inactive>false</inactive>
+            <label>POST</label>
+            <language>en</language>
+            <name>x_984044_integrati_request</name>
+            <sequence>1</sequence>
+            <synonyms/>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2025-12-17 06:43:59</sys_created_on>
+            <sys_domain>global</sys_domain>
+            <sys_domain_path>/</sys_domain_path>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2025-12-17 06:43:59</sys_updated_on>
+            <value>POST</value>
+        </sys_choice>
+        <sys_choice action="INSERT_OR_UPDATE">
+            <dependent_value/>
+            <element>method</element>
+            <hint/>
+            <inactive>false</inactive>
+            <label>PUT</label>
+            <language>en</language>
+            <name>x_984044_integrati_request</name>
+            <sequence>2</sequence>
+            <synonyms/>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2025-12-17 06:43:59</sys_created_on>
+            <sys_domain>global</sys_domain>
+            <sys_domain_path>/</sys_domain_path>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2025-12-17 06:43:59</sys_updated_on>
+            <value>PUT</value>
+        </sys_choice>
+        <sys_choice action="INSERT_OR_UPDATE">
+            <dependent_value/>
+            <element>method</element>
+            <hint/>
+            <inactive>false</inactive>
+            <label>PATCH</label>
+            <language>en</language>
+            <name>x_984044_integrati_request</name>
+            <sequence>3</sequence>
+            <synonyms/>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2025-12-17 06:43:59</sys_created_on>
+            <sys_domain>global</sys_domain>
+            <sys_domain_path>/</sys_domain_path>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2025-12-17 06:43:59</sys_updated_on>
+            <value>PATCH</value>
+        </sys_choice>
+        <sys_choice action="INSERT_OR_UPDATE">
+            <dependent_value/>
+            <element>method</element>
+            <hint/>
+            <inactive>false</inactive>
+            <label>DELETE</label>
+            <language>en</language>
+            <name>x_984044_integrati_request</name>
+            <sequence>4</sequence>
+            <synonyms/>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2025-12-17 06:43:59</sys_created_on>
+            <sys_domain>global</sys_domain>
+            <sys_domain_path>/</sys_domain_path>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2025-12-17 06:43:59</sys_updated_on>
+            <value>DELETE</value>
+        </sys_choice>
+    </sys_choice>
+</record_update>

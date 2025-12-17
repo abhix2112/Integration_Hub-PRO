@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?><database>
+    <element db_object_id="675b4436c371321013e7b8ddd4013109" label="API Request" max_length="40" name="x_984044_integrati_request" type="collection">
+        <element attributes="encode_utf8=false" label="Collection" max_length="32" name="collection" reference="x_984044_integrati_collection" type="reference"/>
+        <element attributes="edge_encryption_enabled=true" default="{}" label="Headers (JSON)" max_length="4000" name="headers" type="string"/>
+        <element choice="3" default="None" label="Authentication Type" max_length="40" name="auth_type" type="choice">
+            <choice>
+                <element inactive_on_update="false" label="Bearer Token" sequence="2" value="Bearer Token"/>
+                <element inactive_on_update="false" label="API Key" sequence="3" value="API Key"/>
+                <element inactive_on_update="false" label="None" sequence="0" value="None"/>
+                <element inactive_on_update="false" label="Basic Auth" sequence="1" value="Basic Auth"/>
+            </choice>
+        </element>
+        <element choice="3" default="Header" label="API Key Location" max_length="40" name="auth_api_key_location" type="choice">
+            <choice>
+                <element inactive_on_update="false" label="Header" sequence="0" value="Header"/>
+                <element inactive_on_update="false" label="Query Parameter" sequence="1" value="Query Param"/>
+            </choice>
+        </element>
+        <element attributes="encode_utf8=false" default="javascript:gs.getUserID()" label="Owner" mandatory="true" max_length="32" name="owner" reference="sys_user" type="reference"/>
+        <element attributes="edge_encryption_enabled=true,encrypt=true" label="Username" max_length="100" name="auth_username" type="string"/>
+        <element attributes="edge_encryption_enabled=true" default="{}" label="Query Parameters (JSON)" max_length="4000" name="query_params" type="string"/>
+        <element choice="3" default="GET" label="HTTP Method" max_length="40" name="method" type="choice">
+            <choice>
+                <element inactive_on_update="false" label="PATCH" sequence="3" value="PATCH"/>
+                <element inactive_on_update="false" label="DELETE" sequence="4" value="DELETE"/>
+                <element inactive_on_update="false" label="GET" sequence="0" value="GET"/>
+                <element inactive_on_update="false" label="POST" sequence="1" value="POST"/>
+                <element inactive_on_update="false" label="PUT" sequence="2" value="PUT"/>
+            </choice>
+        </element>
+        <element attributes="edge_encryption_enabled=true,encrypt=true" label="Password" max_length="100" name="auth_password" type="string"/>
+        <element attributes="edge_encryption_enabled=true" default="X-API-Key" label="API Key Header/Parameter Name" max_length="100" name="auth_api_key_name" type="string"/>
+        <element attributes="edge_encryption_enabled=true" label="Created On" max_length="40" name="created_on" read_only="true" type="glide_date_time"/>
+        <element attributes="edge_encryption_enabled=true" label="URL" mandatory="true" max_length="1000" name="url" type="string"/>
+        <element attributes="edge_encryption_enabled=true" label="Request Body" max_length="65000" name="body" type="string"/>
+        <element attributes="edge_encryption_enabled=true,encrypt=true" label="Token" max_length="500" name="auth_token" type="string"/>
+        <element default="30" label="Timeout (seconds)" max_length="40" name="timeout_seconds" type="integer"/>
+        <element attributes="edge_encryption_enabled=true" label="Updated On" max_length="40" name="updated_on" read_only="true" type="glide_date_time"/>
+        <element attributes="edge_encryption_enabled=true" display="true" label="Name" mandatory="true" max_length="100" name="name" type="string"/>
+        <element attributes="edge_encryption_enabled=true" label="Description" max_length="500" name="description" type="string"/>
+        <element choice="3" default="JSON" label="Body Type" max_length="40" name="body_type" type="choice">
+            <choice>
+                <element inactive_on_update="false" label="None" sequence="0" value="None"/>
+                <element inactive_on_update="false" label="Raw" sequence="4" value="Raw"/>
+                <element inactive_on_update="false" label="JSON" sequence="1" value="JSON"/>
+                <element inactive_on_update="false" label="XML" sequence="2" value="XML"/>
+                <element inactive_on_update="false" label="Form Data" sequence="3" value="Form Data"/>
+            </choice>
+        </element>
+        <element attributes="edge_encryption_enabled=true,encrypt=true" label="API Key" max_length="500" name="auth_api_key" type="string"/>
+        <element default="true" label="Verify SSL" max_length="40" name="verify_ssl" type="boolean"/>
+        <index name="index">
+            <element name="collection"/>
+        </index>
+        <index name="index2">
+            <element name="owner"/>
+        </index>
+    </element>
+</database>

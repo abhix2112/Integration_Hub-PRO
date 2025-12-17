@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_module">
+    <sys_module action="INSERT_OR_UPDATE">
+        <content><![CDATA[import { gs, GlideDateTime } from '@servicenow/glide';
+
+var IHubProRequestExecutor = Class.create();
+IHubProRequestExecutor.prototype = Object.extendsObject(global.AbstractAjaxProcessor, {
+
+    /**
+     * Execute an ad-hoc API request (user testing in UI)
+     * @param {Object} config - Request configuration
+     * @returns {string} JSON response
+     */
+    executeQuickRequest: function() {
+        try {
+            var config = this.getParameter('sysparm_config');
+            if (!config) {
+                return JSON.stringify({
+                    success: false,
+                    error: 'Configuration parameter is required'
+                });
+            }
+
+            var configObj = JSON.parse(config);
+            return JSON.stringify(this._executeRequest(configObj));
+        } catch (e) {
+            gs.error('IHubProRequestExecutor.executeQuickRequest error: ' + e.message);
+            return JSON.stringify({
+                success: false,
+                error: 'Failed to execute request: ' + e.message
+            });
+        }
+    },
+
+    /**
+     * Execute a saved request from the database
+     * @returns {string} JSON response
+     */
+    executeSavedRequest: function() {
+        try {
+            var requestSysId = this.getParameter('sysparm_request_sys_id');
+            var environmentSysId = this.getParameter('sysparm_environment_sys_id');
+
+            if (!requestSysId) {
+                return JSON.stringify({
+                    success: false,
+                    error: 'Request sys_id is required'
+                });
+            }
+
+            // Load request configuration
+            var requestGr = new GlideRecord('x_984044_integrati_request');
+            if (!requestGr.get(requestSysId)) {
+                return JSON.stringify({
+                    success: false,
+                    error: 'Request not found'
+                });
+            }
+
+            // Build config from database record
+            var config = {
+                method: requestGr.getValue('method'),
+                url: requestGr.getValue('url'),
+                headers: this._parseJSON(requestGr.getValue('headers')),
+                body: requestGr.getValue('body'),
+                authType: requestGr.getValue('auth_type'),
+                authUsername: requestGr.getValue('auth_username'),
+                authPassword: requestGr.getValue('auth_password'),
+                authToken: requestGr.getValue('auth_token'),
+                authApiKey: requestGr.getValue('auth_api_key'),
+                authApiKeyLocation: requestGr.getValue('auth_api_key_location'),
+                authApiKeyName: requestGr.getValue('auth_api_key_name'),
+                timeout: parseInt(requestGr.getValue('timeout_seconds')) || 30,
+                verifySsl: requestGr.getValue('verify_ssl') == 'true'
+            };
+
+            // Apply environment variables if provided
+            if (environmentSysId) {
+                config = this._substituteVariables(config, environmentSysId);
+            }
+
+            var result = this._executeRequest(config);
+            
+            // Log to history with link to saved request
+            this._logToHistory(config, result, requestGr, environmentSysId);
+
+            return JSON.stringify(result);
+        } catch (e) {
+            gs.error('IHubProRequestExecutor.executeSavedRequest error: ' + e.message);
+            return JSON.stringify({
+                success: false,
+                error: 'Failed to execute saved request: ' + e.message
+            });
+        }
+    },
+
+    /**
+     * Core method to execute HTTP request
+     * @param {Object} config - Request configuration
+     * @returns {Object} Response object
+     */
+    _executeRequest: function(config) {
+        var startTime = new GlideDateTime();
+        var result = {
+            success: false,
+            statusCode: 0,
+            statusText: '',
+            headers: {},
+            body: '',
+            responseTime: 0,
+            error: null
+        };
+
+        try {
+            // Validate required fields
+            if (!config.url || !config.method) {
+                result.error = 'URL and method are required';
+                return result;
+            }
+
+            // Create REST message
+            var restMessage = new sn_ws.RESTMessageV2();
+            restMessage.setEndpoint(config.url);
+            restMessage.setHttpMethod(config.method);
+
+            // Set timeout
+            if (config.timeout) {
+                restMessage.setHttpTimeout(config.timeout * 1000); // Convert to milliseconds
+            }
+
+            // Set headers
+            if (config.headers) {
+                for (var header in config.headers) {
+                    restMessage.setRequestHeader(header, config.headers[header]);
+                }
+            }
+
+            // Set body for POST/PUT/PATCH requests
+            if (config.body && (config.method == 'POST' || config.method == 'PUT' || config.method == 'PATCH')) {
+                restMessage.setRequestBody(config.body);
+            }
+
+            // Apply authentication
+            this._applyAuthentication(restMessage, config);
+
+            // Execute request
+            var response = restMessage.execute();
+            var endTime = new GlideDateTime();
+
+            // Calculate response time
+            var responseTimeMs = endTime.getNumericValue() - startTime.getNumericValue();
+
+            // Parse response
+            result.success = true;
+            result.statusCode = response.getStatusCode();
+            result.statusText = response.getStatusText() || this._getStatusText(result.statusCode);
+            result.body = response.getBody();
+            result.responseTime = responseTimeMs;
+
+            // Parse response headers
+            var responseHeaders = response.getAllHeaders();
+            if (responseHeaders) {
+                for (var i = 0; i < responseHeaders.length; i++) {
+                    var headerObj = responseHeaders[i];
+                    result.headers[headerObj.name] = headerObj.value;
+                }
+            }
+
+            // Log to history for quick requests (no saved request reference)
+            if (!arguments[1]) { // If not called from executeSavedRequest
+                this._logToHistory(config, result, null, null);
+            }
+
+        } catch (e) {
+            result.error = 'Request failed: ' + e.message;
+            gs.error('IHubProRequestExecutor._executeRequest error: ' + e.message);
+        }
+
+        return result;
+    },
+
+    /**
+     * Apply authentication to REST message
+     * @param {sn_ws.RESTMessageV2} restMessage
+     * @param {Object} config
+     */
+    _applyAuthentication: function(restMessage, config) {
+        if (!config.authType || config.authType == 'None') {
+            return;
+        }
+
+        try {
+            switch (config.authType) {
+                case 'Basic Auth':
+                    if (config.authUsername && config.authPassword) {
+                        restMessage.setBasicAuth(config.authUsername, config.authPassword);
+                    }
+                    break;
+
+                case 'Bearer Token':
+                    if (config.authToken) {
+                        restMessage.setRequestHeader('Authorization', 'Bearer ' + config.authToken);
+                    }
+                    break;
+
+                case 'API Key':
+                    if (config.authApiKey && config.authApiKeyName) {
+                        if (config.authApiKeyLocation == 'Header') {
+                            restMessage.setRequestHeader(config.authApiKeyName, config.authApiKey);
+                        } else if (config.authApiKeyLocation == 'Query Param') {
+                            // Add to query string
+                            var currentUrl = restMessage.getEndpoint();
+                            var separator = currentUrl.indexOf('?') > -1 ? '&' : '?';
+                            var newUrl = currentUrl + separator + 
+                                        encodeURIComponent(config.authApiKeyName) + '=' + 
+                                        encodeURIComponent(config.authApiKey);
+                            restMessage.setEndpoint(newUrl);
+                        }
+                    }
+                    break;
+            }
+        } catch (e) {
+            gs.error('IHubProRequestExecutor._applyAuthentication error: ' + e.message);
+        }
+    },
+
+    /**
+     * Substitute environment variables in configuration
+     * @param {Object} config
+     * @param {string} environmentSysId
+     * @returns {Object} Updated config
+     */
+    _substituteVariables: function(config, environmentSysId) {
+        try {
+            var envGr = new GlideRecord('x_984044_integrati_environment');
+            if (!envGr.get(environmentSysId)) {
+                return config;
+            }
+
+            var variables = this._parseJSON(envGr.getValue('variables'));
+            if (!variables) {
+                return config;
+            }
+
+            // Clone config to avoid modifying original
+            var newConfig = JSON.parse(JSON.stringify(config));
+
+            // Substitute variables in URL
+            if (newConfig.url) {
+                newConfig.url = this._replaceVariables(newConfig.url, variables);
+            }
+
+            // Substitute variables in headers
+            if (newConfig.headers) {
+                for (var header in newConfig.headers) {
+                    newConfig.headers[header] = this._replaceVariables(newConfig.headers[header], variables);
+                }
+            }
+
+            // Substitute variables in body
+            if (newConfig.body) {
+                newConfig.body = this._replaceVariables(newConfig.body, variables);
+            }
+
+            return newConfig;
+        } catch (e) {
+            gs.error('IHubProRequestExecutor._substituteVariables error: ' + e.message);
+            return config;
+        }
+    },
+
+    /**
+     * Replace {{variable}} placeholders in text
+     * @param {string} text
+     * @param {Object} variables
+     * @returns {string}
+     */
+    _replaceVariables: function(text, variables) {
+        if (!text || typeof text !== 'string') {
+            return text;
+        }
+
+        return text.replace(/\{\{([^}]+)\}\}/g, function(match, varName) {
+            return variables[varName.trim()] || match;
+        });
+    },
+
+    /**
+     * Log request execution to history
+     * @param {Object} config
+     * @param {Object} result
+     * @param {GlideRecord} requestGr
+     * @param {string} environmentSysId
+     */
+    _logToHistory: function(config, result, requestGr, environmentSysId) {
+        try {
+            var historyGr = new GlideRecord('x_984044_integrati_history');
+            historyGr.initialize();
+
+            if (requestGr) {
+                historyGr.setValue('request', requestGr.getUniqueValue());
+                historyGr.setValue('request_name', requestGr.getValue('name'));
+            } else {
+                historyGr.setValue('request_name', 'Quick Request');
+            }
+
+            historyGr.setValue('executed_by', gs.getUserID());
+            historyGr.setValue('executed_on', new GlideDateTime().getDisplayValue());
+            historyGr.setValue('method', config.method);
+            historyGr.setValue('url', config.url);
+            
+            if (config.headers) {
+                historyGr.setValue('request_headers', JSON.stringify(config.headers));
+            }
+            if (config.body) {
+                historyGr.setValue('request_body', config.body);
+            }
+
+            historyGr.setValue('status_code', result.statusCode);
+            historyGr.setValue('status_text', result.statusText);
+            historyGr.setValue('response_time_ms', result.responseTime);
+
+            if (result.headers) {
+                historyGr.setValue('response_headers', JSON.stringify(result.headers));
+            }
+            if (result.body) {
+                // Truncate if too large
+                var responseBody = result.body;
+                if (responseBody.length > 60000) {
+                    responseBody = responseBody.substring(0, 60000) + '... [truncated]';
+                }
+                historyGr.setValue('response_body', responseBody);
+            }
+            if (result.error) {
+                historyGr.setValue('error_message', result.error);
+            }
+            if (environmentSysId) {
+                historyGr.setValue('environment_used', environmentSysId);
+            }
+
+            historyGr.insert();
+        } catch (e) {
+            gs.error('IHubProRequestExecutor._logToHistory error: ' + e.message);
+        }
+    },
+
+    /**
+     * Parse JSON string safely
+     * @param {string} jsonString
+     * @returns {Object|null}
+     */
+    _parseJSON: function(jsonString) {
+        try {
+            return JSON.parse(jsonString || '{}');
+        } catch (e) {
+            return {};
+        }
+    },
+
+    /**
+     * Get status text for HTTP status codes
+     * @param {number} statusCode
+     * @returns {string}
+     */
+    _getStatusText: function(statusCode) {
+        var statusTexts = {
+            200: 'OK',
+            201: 'Created',
+            204: 'No Content',
+            400: 'Bad Request',
+            401: 'Unauthorized',
+            403: 'Forbidden',
+            404: 'Not Found',
+            405: 'Method Not Allowed',
+            500: 'Internal Server Error',
+            502: 'Bad Gateway',
+            503: 'Service Unavailable'
+        };
+        return statusTexts[statusCode] || 'Unknown';
+    },
+
+    type: 'IHubProRequestExecutor'
+});]]></content>
+        <external_source>false</external_source>
+        <path>x_984044_integrati/x-984044-integrationh/1.0.0/src/server/script-includes/ihub-pro-request-executor.js</path>
+        <sys_class_name>sys_module</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-12-17 06:44:02</sys_created_on>
+        <sys_id>2a174b3c06b34fe894b61ce0d2d50ff9</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>x_984044_integrati/x-984044-integrationh/1.0.0/src/server/script-includes/ihub-pro-request-executor.js</sys_name>
+        <sys_package display_value="Integrationh" source="x_984044_integrati">794508f6c331321013e7b8ddd4013165</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="Integrationh">794508f6c331321013e7b8ddd4013165</sys_scope>
+        <sys_update_name>sys_module_2a174b3c06b34fe894b61ce0d2d50ff9</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-12-17 06:44:02</sys_updated_on>
+    </sys_module>
+</record_update>

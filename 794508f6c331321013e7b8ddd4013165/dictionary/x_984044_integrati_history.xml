@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?><database>
+    <element db_object_id="7f5b4436c371321013e7b8ddd4013180" label="Request History" max_length="40" name="x_984044_integrati_history" type="collection">
+        <element attributes="edge_encryption_enabled=true" display="true" label="Request Name" max_length="100" name="request_name" type="string"/>
+        <element attributes="edge_encryption_enabled=true" label="URL" mandatory="true" max_length="1000" name="url" type="string"/>
+        <element attributes="edge_encryption_enabled=true" label="Status Text" max_length="100" name="status_text" type="string"/>
+        <element attributes="encode_utf8=false" label="Environment Used" max_length="32" name="environment_used" reference="x_984044_integrati_environment" type="reference"/>
+        <element attributes="encode_utf8=false" default="javascript:gs.getUserID()" label="Executed By" mandatory="true" max_length="32" name="executed_by" reference="sys_user" type="reference"/>
+        <element attributes="edge_encryption_enabled=true" label="Request Headers (JSON)" max_length="8000" name="request_headers" type="string"/>
+        <element attributes="edge_encryption_enabled=true" label="Response Headers (JSON)" max_length="8000" name="response_headers" type="string"/>
+        <element attributes="edge_encryption_enabled=true" label="Response Body" max_length="65000" name="response_body" type="string"/>
+        <element attributes="edge_encryption_enabled=true" default="javascript:new GlideDateTime().getDisplayValue()" label="Executed On" max_length="40" name="executed_on" type="glide_date_time"/>
+        <element attributes="edge_encryption_enabled=true" label="Request Body" max_length="65000" name="request_body" type="string"/>
+        <element label="Status Code" max_length="40" name="status_code" type="integer"/>
+        <element attributes="edge_encryption_enabled=true" label="Error Message" max_length="1000" name="error_message" type="string"/>
+        <element label="Response Time (ms)" max_length="40" name="response_time_ms" type="integer"/>
+        <element attributes="encode_utf8=false" label="Request" max_length="32" name="request" reference="x_984044_integrati_request" type="reference"/>
+        <element attributes="edge_encryption_enabled=true" label="Method" max_length="10" name="method" type="string"/>
+        <index name="index">
+            <element name="environment_used"/>
+        </index>
+        <index name="index2">
+            <element name="executed_by"/>
+        </index>
+        <index name="index3">
+            <element name="request"/>
+        </index>
+    </element>
+</database>
